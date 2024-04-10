@@ -1,10 +1,6 @@
 #0.2.1
-# тестовый push
 import json
 import os
-import datetime
-213232
-
 
 def read_config_json(json_file):
     try:
