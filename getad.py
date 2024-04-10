@@ -1,7 +1,7 @@
 #0.2.1
 import json
 import os
-
+sad
 def read_config_json(json_file):
     try:
         with open(json_file, "r", encoding="utf-8") as file:
