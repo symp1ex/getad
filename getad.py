@@ -1,11 +1,10 @@
-#0.2.2
+#0.2.3
 import json
 import os
 
 def file_exists_in_root(filename):
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # получаем путь к папке скрипта
-    file_path = os.path.join(script_dir, filename)  # создаем полный путь к файлу
-    return os.path.isfile(file_path)  # возвращает True, если файл существует, иначе False
+    root_path = os.path.join(os.getcwd(), filename)  # Получаем путь к файлу в корне
+    return os.path.isfile(root_path)  # Возвращает True, если файл существует, иначе False
 
 def read_config_json(json_file):
     try:
