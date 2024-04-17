@@ -2,6 +2,11 @@
 import json
 import os
 
+def file_exists_in_root(filename):
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # получаем путь к папке скрипта
+    file_path = os.path.join(script_dir, filename)  # создаем полный путь к файлу
+    return os.path.isfile(file_path)  # возвращает True, если файл существует, иначе False
+
 def read_config_json(json_file):
     try:
         with open(json_file, "r", encoding="utf-8") as file:
@@ -182,7 +187,10 @@ def get_date_kkt(fptr, IFptr):
 def main():
     try:
         from libfptr108 import IFptr  # подтягиваем библиотеку от 10.8 и проверяем версию
-        fptr = IFptr()
+        if file_exists_in_root("fptr10.dll"):
+            fptr = IFptr(r".\fptr10.dll")
+        else:
+            fptr = IFptr("")
         version_byte = fptr.version()
         version = version_byte.decode()
         print(f"Инициализирован драйвер версии {version}")
@@ -197,7 +205,10 @@ def main():
         if major == 10 and minor >= 9:  # если версия от 10.9.0.0 и выше (поддержка ФФД 1.2) то загружаем библиотеку с поддержкой драйвера вплоть до 10.10
             del fptr
             from libfptr109 import IFptr
-            fptr = IFptr()
+            if file_exists_in_root("fptr10.dll"):
+                fptr = IFptr(r".\fptr10.dll")
+            else:
+                fptr = IFptr("")
     except ImportError:
         pass
 
