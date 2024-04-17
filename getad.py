@@ -1,6 +1,7 @@
-#0.2.3-b
+#0.3-b
 import json
 import os
+from comautodetect import get_atol_port_dict
 
 def file_exists_in_root(filename):
     root_path = os.path.join(os.getcwd(), filename)  # Получаем путь к файлу в корне
@@ -35,6 +36,13 @@ def status_connect(fptr):
     elif isOpened == 0:
         print(f"Соединение с ККТ разорвано")
         return isOpened
+
+def checkstatus_getdate(fptr, IFptr):
+    isOpened = status_connect(fptr)  # првоверяем статус подключения к ККТ
+    if isOpened == 1:
+        get_date_kkt(fptr, IFptr)  # получаем и сохраняем данные
+    elif isOpened == 0:
+        del fptr
 
 
 def connect_kkt(fptr, IFptr):
@@ -182,7 +190,6 @@ def get_date_kkt(fptr, IFptr):
     print(str(attribute_podakciz))
     print(str(attribute_marked))
 
-
 def main():
     try:
         from libfptr108 import IFptr  # подтягиваем библиотеку от 10.8 и проверяем версию
@@ -211,14 +218,27 @@ def main():
     except ImportError:
         pass
 
-    connect_kkt(fptr, IFptr)  # подключаемся к ККТ
+    json_file = os.path.join(os.getcwd(), "config.json")
+    config = read_config_json(json_file)
 
-    isOpened = status_connect(fptr)  # првоверяем статус подключения к ККТ
-    if isOpened == 1:
-        get_date_kkt(fptr, IFptr)  # получаем и сохраняем данные
-    elif isOpened == 0:
-        del fptr
+    if not config.get("type_connect") == 0:
+        connect_kkt(fptr, IFptr)  # подключаемся к ККТ
+        checkstatus_getdate(fptr, IFptr)
+    else:
+        port_number_ad = get_atol_port_dict()
+        print(port_number_ad)
+        baud_rate = config.get("com_baudrate")
+        for port in port_number_ad.values():
+            settings = "{{\"{}\": {}, \"{}\": {}, \"{}\": \"{}\", \"{}\": {}}}".format(
+                IFptr.LIBFPTR_SETTING_MODEL, IFptr.LIBFPTR_MODEL_ATOL_AUTO,
+                IFptr.LIBFPTR_SETTING_PORT, IFptr.LIBFPTR_PORT_COM,
+                IFptr.LIBFPTR_SETTING_COM_FILE, port,
+                IFptr.LIBFPTR_SETTING_BAUDRATE, getattr(IFptr, "LIBFPTR_PORT_BR_" + str(baud_rate)))
+            fptr.setSettings(settings)
 
+            fptr.open()
+
+            checkstatus_getdate(fptr, IFptr)
 
 if __name__ == "__main__":
     main()
