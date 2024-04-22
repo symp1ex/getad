@@ -1,8 +1,11 @@
-#0.4.1
+#0.4.2
 import json
 import os
 from comautodetect import get_atol_port_dict
 from comautodetect import log_with_timestamp
+from get_remote import get_server_url
+from get_remote import get_teamviewer_id
+from get_remote import get_anydesk_id
 
 def file_exists_in_root(filename):
     try:
@@ -175,7 +178,7 @@ def get_date_kkt(fptr, IFptr, port):
 
         ffdVersion = fptr.getParamInt(IFptr.LIBFPTR_PARAM_FFD_VERSION)
 
-        log_with_timestamp(f"Данные получены")
+        log_with_timestamp(f"Данные от ККТ получены")
 
         fptr.close()
         status_connect(fptr, port)
@@ -200,6 +203,18 @@ def get_date_kkt(fptr, IFptr, port):
         create_date_file(date_json, serialNumber)
     except Exception as e:
         log_with_timestamp(e)
+
+def get_remote():
+    url_rms = get_server_url()
+    teamviever_id = get_teamviewer_id()
+    anydesk_id = get_anydesk_id()
+
+    date_json = {
+        "url_rms": str(url_rms),
+        "teamviever_id": str(teamviever_id),
+        "anydesk_id": str(anydesk_id),
+    }
+    create_date_file(date_json, "remote")
 
 def main():
     try:
@@ -240,7 +255,8 @@ def main():
             checkstatus_getdate(fptr, IFptr, port)
         elif config is not None and config.get("type_connect") == 0:
             port_number_ad = get_atol_port_dict()
-            log_with_timestamp(f"Найдены порты: {port_number_ad}")
+            if not port_number_ad == {}:
+                log_with_timestamp(f"Найдены порты: {port_number_ad}")
             baud_rate = config.get("com_baudrate")
             for port in port_number_ad.values():
                 settings = "{{\"{}\": {}, \"{}\": {}, \"{}\": \"{}\", \"{}\": {}}}".format(
@@ -259,6 +275,8 @@ def main():
             checkstatus_getdate(fptr, IFptr, port)
     except Exception as e:
         log_with_timestamp(e)
+
+    get_remote()
 
 if __name__ == "__main__":
     main()
