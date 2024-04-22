@@ -1,4 +1,12 @@
 import serial.tools.list_ports
+import sys
+from datetime import datetime
+
+sys.stdout = open('main.log', 'a')
+
+def log_with_timestamp(message):
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+    print(f"{timestamp} {message}")
 
 def get_com_ports():
     com_ports = serial.tools.list_ports.comports()
@@ -12,7 +20,7 @@ def get_list_atol():
             if 'ATOL' in description:
                 atol_ports.append(port)
     else:
-        print("COM-порты не найдены.")
+        log_with_timestamp("COM-порты не найдены.")
     return atol_ports
 
 def get_atol_port_dict():
