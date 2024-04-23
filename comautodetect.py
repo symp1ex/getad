@@ -1,8 +1,28 @@
 import serial.tools.list_ports
 import sys
-from datetime import datetime
+import os
+from datetime import datetime, timedelta
 
-sys.stdout = open('main.log', 'a')
+log_folder = 'l'
+if not os.path.exists(log_folder):
+    os.makedirs(log_folder)
+
+# Получаем текущую дату
+current_date = datetime.now()
+
+# Определяем дату, старше которой логи будут удаляться
+old_date_limit = current_date - timedelta(days=14)
+
+# Удаляем логи старше 10 дней
+for file_name in os.listdir(log_folder):
+    file_path = os.path.join(log_folder, file_name)
+    file_creation_time = datetime.fromtimestamp(os.path.getctime(file_path))
+    if file_creation_time < old_date_limit:
+        os.remove(file_path)
+
+timestamp = datetime.now().strftime("%Y-%m-%d")
+log_file = os.path.join(log_folder, f"{timestamp}.log")
+sys.stdout = open(log_file, 'a')
 
 def log_with_timestamp(message):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
