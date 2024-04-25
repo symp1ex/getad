@@ -1,4 +1,4 @@
-#0.4.4
+#0.4.5
 import json
 import os
 from comautodetect import get_atol_port_dict

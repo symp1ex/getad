@@ -25,12 +25,27 @@ def get_server_url():
 
 def get_teamviewer_id():
     try:
+        # Проверяем раздел реестра для 64-битных приложений
         with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SOFTWARE\\TeamViewer", 0,
                             winreg.KEY_READ | winreg.KEY_WOW64_64KEY) as key:
             value, _ = winreg.QueryValueEx(key, "ClientID")
-            return value
+            if value:
+                return value
     except FileNotFoundError:
-        log_with_timestamp("Реестровый ключ не найден.")
+        pass  # Продолжаем проверку в другом разделе
+    except Exception as e:
+        log_with_timestamp(f"Произошла ошибка при чтении реестра: {e}")
+
+    try:
+        # Если значение не найдено в разделе для 64-битных приложений,
+        # проверяем раздел реестра для 32-битных приложений
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SOFTWARE\\TeamViewer", 0,
+                            winreg.KEY_READ | winreg.KEY_WOW64_32KEY) as key:
+            value, _ = winreg.QueryValueEx(key, "ClientID")
+            if value:
+                return value
+    except FileNotFoundError:
+        log_with_timestamp('Реестровый ключ "ClientID" для TeamViewer не найден.')
     except Exception as e:
         log_with_timestamp(f"Произошла ошибка при чтении реестра: {e}")
 
@@ -43,7 +58,7 @@ def get_anydesk_id():
                 if line.startswith("ad.anynet.id"):
                     ad_anynet_id = line.split("=")[1].strip()
                     return ad_anynet_id
-        log_with_timestamp("Параметр 'ad.anynet.id' не найден в файле.")
+        log_with_timestamp("Параметр 'ad.anynet.id' не найден в system.conf.")
         return None
     except FileNotFoundError:
         log_with_timestamp("Файл system.conf не найден.")
