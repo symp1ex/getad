@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
 import os
 import winreg
+import ctypes
 from comautodetect import log_with_timestamp
 
 
@@ -64,3 +65,17 @@ def get_anydesk_id():
         log_with_timestamp("Файл system.conf не найден.")
     except Exception as e:
         log_with_timestamp(e)
+
+
+def get_disk_info(drive):
+    free_bytes = ctypes.c_ulonglong(0)
+    total_bytes = ctypes.c_ulonglong(0)
+    ctypes.windll.kernel32.GetDiskFreeSpaceExW(ctypes.c_wchar_p(drive), None, ctypes.pointer(total_bytes), ctypes.pointer(free_bytes))
+    total_space_gb = total_bytes.value / (1024 ** 3)  # Общий объем в гигабайтах
+    free_space_gb = free_bytes.value / (1024 ** 3)    # Свободное место в гигабайтах
+
+    # Ограничиваем количество знаков после запятой до 3
+    total_space_gb = "{:.2f}".format(total_space_gb)
+    free_space_gb = "{:.2f}".format(free_space_gb)
+
+    return total_space_gb, free_space_gb

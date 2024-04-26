@@ -1,4 +1,4 @@
-#0.4.5
+#0.4.6
 import json
 import os
 from comautodetect import get_atol_port_dict
@@ -6,6 +6,7 @@ from comautodetect import log_with_timestamp
 from get_remote import get_server_url
 from get_remote import get_teamviewer_id
 from get_remote import get_anydesk_id
+from get_remote import get_disk_info
 
 def file_exists_in_root(filename):
     try:
@@ -119,7 +120,7 @@ def get_date_kkt(fptr, IFptr, port):
         ofdName = fptr.getParamString(1046)
         organizationName = fptr.getParamString(1048)
         INN = fptr.getParamString(1018)
-        attribute_podakciz = fptr.getParamBool(1207)
+        attribute_excise = fptr.getParamBool(1207)
         attribute_marked = fptr.getParamBool(IFptr.LIBFPTR_PARAM_TRADE_MARKED_PRODUCTS)
     except Exception as e:
         log_with_timestamp(e)
@@ -196,7 +197,7 @@ def get_date_kkt(fptr, IFptr, port):
             "bootVersion": str(bootVersion),
             "ffdVersion": str(ffdVersion),
             "INN": str(INN),
-            "attribute_podakciz": str(attribute_podakciz),
+            "attribute_excise": str(attribute_excise),
             "attribute_marked": str(attribute_marked),
             "fnExecution": str(fnExecution)
         }
@@ -209,10 +210,15 @@ def get_remote():
     teamviever_id = get_teamviewer_id()
     anydesk_id = get_anydesk_id()
 
+    drive = 'C:\\'
+    total_space_gb, free_space_gb = get_disk_info(drive)
+
     date_json = {
         "url_rms": str(url_rms),
         "teamviever_id": str(teamviever_id),
         "anydesk_id": str(anydesk_id),
+        "total_space_sys": str(f"{total_space_gb} Gb"),
+        "free_space_sys": str(f"{free_space_gb} Gb")
     }
     create_date_file(date_json, "remote")
 

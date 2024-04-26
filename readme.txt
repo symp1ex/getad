@@ -20,7 +20,7 @@
     "bootVersion": "5.8.100",
     "ffdVersion": "105",
     "INN": "1111222233  ",
-    "fnExecution": "Эмулятор ФН с поддержкой ФФД 1.2               ",
-    "attribute_podakciz": "True",
-    "attribute_marked": "False"
+    "attribute_excise": "True",
+    "attribute_marked": "False",
+    "fnExecution": "Эмулятор ФН с поддержкой ФФД 1.2"
 }
