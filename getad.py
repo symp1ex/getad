@@ -1,19 +1,16 @@
-#0.4.6
+#0.4.7
 import json
 import os
-from comautodetect import get_atol_port_dict
-from comautodetect import log_with_timestamp
-from get_remote import get_server_url
-from get_remote import get_teamviewer_id
-from get_remote import get_anydesk_id
-from get_remote import get_disk_info
+import subprocess
+from comautodetect import get_atol_port_dict, log_with_timestamp
+from get_remote import get_server_url, get_teamviewer_id, get_anydesk_id, get_disk_info, get_hostname
 
 def file_exists_in_root(filename):
     try:
         root_path = os.path.join(os.getcwd(), filename)  # Получаем путь к файлу в корне
         return os.path.isfile(root_path)  # Возвращает True, если файл существует, иначе False
     except Exception as e:
-        log_with_timestamp(e)
+        log_with_timestamp(f"Error: {e}")
 
 def read_config_json(json_file):
     try:
@@ -35,7 +32,7 @@ def create_date_file(date_json, file_name):
             json.dump(date_json, file, ensure_ascii=False, indent=4)
             log_with_timestamp(f"Данные сохранены в файле {file_path}")
     except Exception as e:
-        log_with_timestamp(e)
+        log_with_timestamp(f"Error: {e}")
 
 
 def status_connect(fptr, port):
@@ -48,7 +45,7 @@ def status_connect(fptr, port):
             log_with_timestamp(f"Соединение с ККТ разорвано ({port})")
             return isOpened
     except Exception as e:
-        log_with_timestamp(e)
+        log_with_timestamp(f"Error: {e}")
 
 def checkstatus_getdate(fptr, IFptr, port):
     try:
@@ -58,7 +55,7 @@ def checkstatus_getdate(fptr, IFptr, port):
         elif isOpened == 0:
             del fptr
     except Exception as e:
-        log_with_timestamp(e)
+        log_with_timestamp(f"Error: {e}")
 
 def connect_kkt(fptr, IFptr):
     try:
@@ -101,7 +98,7 @@ def connect_kkt(fptr, IFptr):
             ip_with_port = f"{config.get('ip')}:{config.get('ip_port')}"
             return settings.get(IFptr.LIBFPTR_SETTING_COM_FILE, None) or ip_with_port
     except Exception as e:
-        log_with_timestamp(e)
+        log_with_timestamp(f"Error: {e}")
 
 def get_date_kkt(fptr, IFptr, port):
     try:
@@ -123,7 +120,7 @@ def get_date_kkt(fptr, IFptr, port):
         attribute_excise = fptr.getParamBool(1207)
         attribute_marked = fptr.getParamBool(IFptr.LIBFPTR_PARAM_TRADE_MARKED_PRODUCTS)
     except Exception as e:
-        log_with_timestamp(e)
+        log_with_timestamp(f"Error: {e}")
         attribute_marked = "Не поддерживается в текущей версии драйвера"
 
     # запрос общей инфы из ФН
@@ -136,7 +133,7 @@ def get_date_kkt(fptr, IFptr, port):
         # Используйте значение fn_execution здесь
     except Exception as e:
         # Обработка случая, когда атрибут LIBFPTR_PARAM_FN_EXECUTION отсутствует
-        log_with_timestamp(e)
+        log_with_timestamp(f"Error: {e}")
         fnExecution = "Не поддерживается в текущей версии драйвера"
 
     # функция запроса даты регистрации, если регистрация была первой
@@ -156,7 +153,7 @@ def get_date_kkt(fptr, IFptr, port):
                 dateTime = fptr.getParamDateTime(IFptr.LIBFPTR_PARAM_DATE_TIME)
                 return dateTime
         except Exception as e:
-            log_with_timestamp(e)
+            log_with_timestamp(f"Error: {e}")
 
     datetime_reg = datetime_reg_check(fptr)
 
@@ -203,9 +200,10 @@ def get_date_kkt(fptr, IFptr, port):
         }
         create_date_file(date_json, serialNumber)
     except Exception as e:
-        log_with_timestamp(e)
+        log_with_timestamp(f"Error: {e}")
 
 def get_remote():
+    hostname = get_hostname()
     url_rms = get_server_url()
     teamviever_id = get_teamviewer_id()
     anydesk_id = get_anydesk_id()
@@ -214,13 +212,14 @@ def get_remote():
     total_space_gb, free_space_gb = get_disk_info(drive)
 
     date_json = {
+        "hostname": str(hostname),
         "url_rms": str(url_rms),
         "teamviever_id": str(teamviever_id),
         "anydesk_id": str(anydesk_id),
         "total_space_sys": str(f"{total_space_gb} Gb"),
         "free_space_sys": str(f"{free_space_gb} Gb")
     }
-    create_date_file(date_json, "remote")
+    create_date_file(date_json, 'info')
 
 def main():
     try:
@@ -250,7 +249,7 @@ def main():
     except ImportError:
         pass
     except Exception as e:
-        log_with_timestamp(e)
+        log_with_timestamp(f"Error: {e}")
 
     json_file = os.path.join(os.getcwd(), "config.json")
     config = read_config_json(json_file)
@@ -280,9 +279,16 @@ def main():
             port = connect_kkt(fptr, IFptr)  # подключаемся к ККТ
             checkstatus_getdate(fptr, IFptr, port)
     except Exception as e:
-        log_with_timestamp(e)
+        log_with_timestamp(f"Error: {e}")
 
     get_remote()
+
+    try:
+        exe_path = ".\\updater\\updater.exe"
+        working_directory = ".\\updater\\"  # меняем рабочий каталог
+        subprocess.Popen(exe_path, cwd=working_directory)
+    except Exception:
+        None
 
 if __name__ == "__main__":
     main()
