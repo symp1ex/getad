@@ -26,7 +26,7 @@ def log_with_timestamp(message):
     default_stdout = sys.stdout
     sys.stdout = open(log_file, 'a')
 
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+    timestamp = datetime.now().strftime("[%Y-%m-%d %H:%M:%S.%f")[:-3]+"]"
     print(f"{timestamp} {message}")
     sys.stdout.close()
     sys.stdout = default_stdout
