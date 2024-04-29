@@ -1,4 +1,4 @@
-#0.4.7
+#0.4.8
 import json
 import os
 import subprocess
@@ -22,9 +22,8 @@ def read_config_json(json_file):
     except json.JSONDecodeError:
         return None
 
-def create_date_file(date_json, file_name):
+def create_date_file(date_json, file_name, folder_name):
     try:
-        folder_name = "date"
         if not os.path.exists(folder_name):
             os.makedirs(folder_name)
         file_path = os.path.join(folder_name, f"{file_name}.json")
@@ -198,28 +197,34 @@ def get_date_kkt(fptr, IFptr, port):
             "attribute_marked": str(attribute_marked),
             "fnExecution": str(fnExecution)
         }
-        create_date_file(date_json, serialNumber)
+        folder_name = "date"
+        create_date_file(date_json, serialNumber, folder_name)
     except Exception as e:
         log_with_timestamp(f"Error: {e}")
 
 def get_remote():
-    hostname = get_hostname()
-    url_rms = get_server_url()
-    teamviever_id = get_teamviewer_id()
-    anydesk_id = get_anydesk_id()
+    try:
+        hostname = get_hostname()
+        url_rms = get_server_url()
+        teamviever_id = get_teamviewer_id()
+        anydesk_id = get_anydesk_id()
 
-    drive = 'C:\\'
-    total_space_gb, free_space_gb = get_disk_info(drive)
+        drive = 'C:\\'
+        total_space_gb, free_space_gb = get_disk_info(drive)
 
-    date_json = {
-        "hostname": str(hostname),
-        "url_rms": str(url_rms),
-        "teamviever_id": str(teamviever_id),
-        "anydesk_id": str(anydesk_id),
-        "total_space_sys": str(f"{total_space_gb} Gb"),
-        "free_space_sys": str(f"{free_space_gb} Gb")
-    }
-    create_date_file(date_json, 'info')
+        date_json = {
+            "hostname": str(hostname),
+            "url_rms": str(url_rms),
+            "teamviever_id": str(teamviever_id),
+            "anydesk_id": str(anydesk_id),
+            "total_space_sys": str(f"{total_space_gb} Gb"),
+            "free_space_sys": str(f"{free_space_gb} Gb")
+        }
+
+        folder_name = "date\\info"
+        create_date_file(date_json, hostname, folder_name)
+    except Exception as e:
+        log_with_timestamp(f"Error: {e}")
 
 def main():
     try:

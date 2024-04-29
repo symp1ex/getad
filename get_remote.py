@@ -85,4 +85,10 @@ def get_disk_info(drive):
         log_with_timestamp(f'Error: {e}')
 
 def get_hostname():
-    return socket.gethostname()
+    try:
+        hostname = socket.gethostname()
+        return hostname
+    except Exception as e:
+        hostname = "hostname"
+        log_with_timestamp(f'Error: {e}')
+        return hostname
