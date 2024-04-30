@@ -1,4 +1,4 @@
-#0.4.8.1
+#0.4.8.2
 import json
 import os
 import subprocess
@@ -181,6 +181,8 @@ def get_date_kkt(fptr, IFptr, port):
         status_connect(fptr, port)
         del fptr
 
+        hostname, url_rms, teamviever_id, anydesk_id, total_space_gb, free_space_gb = get_remote()
+
         date_json = {
             "modelName": str(modelName),
             "serialNumber": str(serialNumber),
@@ -195,7 +197,13 @@ def get_date_kkt(fptr, IFptr, port):
             "INN": str(INN),
             "attribute_excise": str(attribute_excise),
             "attribute_marked": str(attribute_marked),
-            "fnExecution": str(fnExecution)
+            "fnExecution": str(fnExecution),
+            "hostname": str(hostname),
+            "url_rms": str(url_rms),
+            "teamviever_id": str(teamviever_id),
+            "anydesk_id": str(anydesk_id),
+            "total_space_sys": str(f"{total_space_gb} Gb"),
+            "free_space_sys": str(f"{free_space_gb} Gb")
         }
         folder_name = "date"
         create_date_file(date_json, serialNumber, folder_name)
@@ -211,18 +219,7 @@ def get_remote():
 
         drive = 'C:\\'
         total_space_gb, free_space_gb = get_disk_info(drive)
-
-        date_json = {
-            "hostname": str(hostname),
-            "url_rms": str(url_rms),
-            "teamviever_id": str(teamviever_id),
-            "anydesk_id": str(anydesk_id),
-            "total_space_sys": str(f"{total_space_gb} Gb"),
-            "free_space_sys": str(f"{free_space_gb} Gb")
-        }
-
-        folder_name = "date\\info"
-        create_date_file(date_json, hostname, folder_name)
+        return hostname, url_rms, teamviever_id, anydesk_id, total_space_gb, free_space_gb
     except Exception as e:
         log_with_timestamp(f"Error: {e}")
 
@@ -285,8 +282,6 @@ def main():
             checkstatus_getdate(fptr, IFptr, port)
     except Exception as e:
         log_with_timestamp(f"Error: {e}")
-
-    get_remote()
 
     try:
         exe_path = ".\\updater\\updater.exe"
