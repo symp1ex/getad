@@ -33,7 +33,6 @@ def create_date_file(date_json, file_name, folder_name):
     except Exception as e:
         log_with_timestamp(f"Error: {e}")
 
-
 def status_connect(fptr, port):
     try:
         isOpened = fptr.isOpened()  # спрашиваем состояние подключения

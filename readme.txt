@@ -22,5 +22,11 @@
     "INN": "1111222233  ",
     "attribute_excise": "True",
     "attribute_marked": "False",
-    "fnExecution": "Эмулятор ФН с поддержкой ФФД 1.2"
+    "fnExecution": "Эмулятор ФН с поддержкой ФФД 1.2",
+    "hostname": "Isaac-LT",
+    "url_rms": "https://resto.iiko.it:443/resto",
+    "teamviever_id": "111222333",
+    "anydesk_id": "222333444",
+    "total_space_sys": "476.83 Gb",
+    "free_space_sys": "267.75 Gb"
 }
