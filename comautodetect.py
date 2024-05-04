@@ -62,3 +62,10 @@ def get_atol_port_dict():
         return atol_port_dict
     except Exception as e:
         log_with_timestamp(f'Error: {e}')
+
+def current_time():
+    try:
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        return timestamp
+    except Exception as e:
+        log_with_timestamp(f"Error: {e}")

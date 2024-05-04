@@ -1,8 +1,8 @@
-#0.4.8.2
+#0.4.8.3
 import json
-import os
+import os, sys
 import subprocess
-from comautodetect import get_atol_port_dict, log_with_timestamp
+from comautodetect import get_atol_port_dict, log_with_timestamp, current_time
 from get_remote import get_server_url, get_teamviewer_id, get_anydesk_id, get_disk_info, get_hostname
 
 def file_exists_in_root(filename):
@@ -21,6 +21,27 @@ def read_config_json(json_file):
         return None
     except json.JSONDecodeError:
         return None
+
+def create_config_file(config, file_path="config.json"):
+    try:
+        with open(file_path, "w", encoding="utf-8") as file:
+            json.dump(config, file, ensure_ascii=False, indent=4)
+    except Exception as e:
+        log_with_timestamp(f"Error: {e}")
+
+def create_new_config():
+    try:
+        config_data = {
+            "type_connect": 3,
+            "com_port": "COM4",
+            "com_baudrate": "115200",
+            "ip": "10.25.1.22",
+            "ip_port": "5555"
+        }
+        create_config_file(config_data)
+        log_with_timestamp("Создан новый config.json")
+    except Exception as e:
+        log_with_timestamp(f"Не удалось создать конфиг файл: {e}")
 
 def create_date_file(date_json, file_name, folder_name):
     try:
@@ -52,6 +73,7 @@ def checkstatus_getdate(fptr, IFptr, port):
             get_date_kkt(fptr, IFptr, port)  # получаем и сохраняем данные
         elif isOpened == 0:
             del fptr
+            return isOpened
     except Exception as e:
         log_with_timestamp(f"Error: {e}")
 
@@ -181,6 +203,7 @@ def get_date_kkt(fptr, IFptr, port):
         del fptr
 
         hostname, url_rms, teamviever_id, anydesk_id, total_space_gb, free_space_gb = get_remote()
+        get_current_time = current_time()
 
         date_json = {
             "modelName": str(modelName),
@@ -202,12 +225,30 @@ def get_date_kkt(fptr, IFptr, port):
             "teamviever_id": str(teamviever_id),
             "anydesk_id": str(anydesk_id),
             "total_space_sys": str(f"{total_space_gb} Gb"),
-            "free_space_sys": str(f"{free_space_gb} Gb")
+            "free_space_sys": str(f"{free_space_gb} Gb"),
+            "current_time": str(get_current_time)
         }
         folder_name = "date"
         create_date_file(date_json, serialNumber, folder_name)
     except Exception as e:
         log_with_timestamp(f"Error: {e}")
+
+def get_date_non_kkt():
+    hostname, url_rms, teamviever_id, anydesk_id, total_space_gb, free_space_gb = get_remote()
+    get_current_time = current_time()
+
+    date_json = {
+        "hostname": str(hostname),
+        "url_rms": str(url_rms),
+        "teamviever_id": str(teamviever_id),
+        "anydesk_id": str(anydesk_id),
+        "total_space_sys": str(f"{total_space_gb} Gb"),
+        "free_space_sys": str(f"{free_space_gb} Gb"),
+        "current_time": str(get_current_time)
+    }
+    folder_name = "date"
+    json_name = f"TV{teamviever_id}_AD{anydesk_id}"
+    create_date_file(date_json, json_name, folder_name)
 
 def get_remote():
     try:
@@ -258,10 +299,14 @@ def main():
     try:
         if config is not None and not config.get("type_connect") == 0:
             port = connect_kkt(fptr, IFptr) # подключаемся к ККТ
-            checkstatus_getdate(fptr, IFptr, port)
+            isOpened = checkstatus_getdate(fptr, IFptr, port)
+            if isOpened == 0:
+                get_date_non_kkt()
         elif config is not None and config.get("type_connect") == 0:
             port_number_ad = get_atol_port_dict()
-            if not port_number_ad == {}:
+            if not port_number_ad:
+                get_date_non_kkt()
+            elif not port_number_ad == {}:
                 log_with_timestamp(f"Найдены порты: {port_number_ad}")
             baud_rate = config.get("com_baudrate")
             for port in port_number_ad.values():
@@ -278,13 +323,18 @@ def main():
         else:
             log_with_timestamp("config.json имеет некорректный формат данных или отсутствует")
             port = connect_kkt(fptr, IFptr)  # подключаемся к ККТ
-            checkstatus_getdate(fptr, IFptr, port)
+            isOpened = checkstatus_getdate(fptr, IFptr, port)
+            if isOpened == 0:
+                get_date_non_kkt()
+            create_new_config()
     except Exception as e:
         log_with_timestamp(f"Error: {e}")
 
     try:
         exe_path = ".\\updater\\updater.exe"
-        working_directory = ".\\updater\\"  # меняем рабочий каталог
+        main_file = os.path.abspath(sys.argv[0])
+        working_directory = os.path.join(os.path.dirname(main_file),
+                                         "updater")  # получаем абсолютный путь к основному файлу скрипта sys.argv[0], а затем с помощью os.path.dirname() извлекаем путь к директории, содержащей основной файл
         subprocess.Popen(exe_path, cwd=working_directory)
     except Exception:
         None
