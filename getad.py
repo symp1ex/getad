@@ -1,4 +1,4 @@
-#0.4.8.5
+#0.4.8.6
 import json
 import os, sys
 import subprocess
@@ -222,7 +222,7 @@ def get_date_kkt(fptr, IFptr, port):
             "fnExecution": str(fnExecution),
             "hostname": str(hostname),
             "url_rms": str(url_rms),
-            "teamviever_id": str(teamviever_id),
+            "teamviewer_id": str(teamviever_id),
             "anydesk_id": str(anydesk_id),
             "total_space_sys": str(f"{total_space_gb} Gb"),
             "free_space_sys": str(f"{free_space_gb} Gb"),
@@ -240,7 +240,7 @@ def get_date_non_kkt():
     date_json = {
         "hostname": str(hostname),
         "url_rms": str(url_rms),
-        "teamviever_id": str(teamviever_id),
+        "teamviewer_id": str(teamviever_id),
         "anydesk_id": str(anydesk_id),
         "total_space_sys": str(f"{total_space_gb} Gb"),
         "free_space_sys": str(f"{free_space_gb} Gb"),
