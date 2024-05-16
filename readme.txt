@@ -25,8 +25,9 @@
     "fnExecution": "Эмулятор ФН с поддержкой ФФД 1.2",
     "hostname": "Isaac-LT",
     "url_rms": "https://resto.iiko.it:443/resto",
-    "teamviever_id": "111222333",
+    "teamviewer_id": "111222333",
     "anydesk_id": "222333444",
     "total_space_sys": "476.83 Gb",
-    "free_space_sys": "267.75 Gb"
+    "free_space_sys": "267.75 Gb",
+	"current_time": "2024-05-05 21:57:25"
 }
