@@ -3,7 +3,7 @@ import os
 import winreg
 import ctypes
 import socket
-from comautodetect import log_with_timestamp
+from comautodetect import exception_handler, log_console_out
 
 
 def get_server_url():
@@ -20,9 +20,9 @@ def get_server_url():
         # Получаем текст из элемента <serverUrl>
         return server_url_element.text
     except FileNotFoundError:
-        log_with_timestamp("Файл config.xml не найден.")
+        log_console_out("Error: файл 'cashserver/config.xml' не найден.")
     except Exception:
-        None
+        exception_handler(type(e), e, e.__traceback__)
 
 
 def get_teamviewer_id():
@@ -36,7 +36,8 @@ def get_teamviewer_id():
     except FileNotFoundError:
         pass  # Продолжаем проверку в другом разделе
     except Exception as e:
-        log_with_timestamp(f"Произошла ошибка при чтении реестра: {e}")
+        log_console_out(f"Error:Произошла ошибка при чтении реестра")
+        exception_handler(type(e), e, e.__traceback__)
 
     try:
         # Если значение не найдено в разделе для 64-битных приложений,
@@ -47,25 +48,27 @@ def get_teamviewer_id():
             if value:
                 return value
     except FileNotFoundError:
-        log_with_timestamp('Реестровый ключ "ClientID" для TeamViewer не найден.')
+        log_console_out('Реестровый ключ "ClientID" для TeamViewer не найден.')
     except Exception as e:
-        log_with_timestamp(f"Произошла ошибка при чтении реестра: {e}")
+        log_console_out(f"Произошла ошибка при чтении реестра")
+        exception_handler(type(e), e, e.__traceback__)
 
 
 def get_anydesk_id():
     try:
         conf_path = os.path.join(os.getenv('APPDATA'), 'anydesk', 'system.conf')
-        with open(conf_path, 'r') as file:
+        with open(conf_path, 'r', encoding='utf-8') as file:
             for line in file:
                 if line.startswith("ad.anynet.id"):
                     ad_anynet_id = line.split("=")[1].strip()
                     return ad_anynet_id
-        log_with_timestamp("Параметр 'ad.anynet.id' не найден в system.conf.")
+        log_console_out("Параметр 'ad.anynet.id' не найден в system.conf.")
         return None
     except FileNotFoundError:
-        log_with_timestamp("Файл system.conf не найден.")
+        log_console_out("Файл system.conf не найден.")
     except Exception as e:
-        log_with_timestamp(f'Error: {e}')
+        log_console_out(f'Error: ошибка при получении anydesk_id')
+        exception_handler(type(e), e, e.__traceback__)
 
 
 def get_disk_info(drive):
@@ -82,7 +85,8 @@ def get_disk_info(drive):
 
         return total_space_gb, free_space_gb
     except Exception as e:
-        log_with_timestamp(f'Error: {e}')
+        log_console_out(f"Error: Не удалось получить информацию о диске")
+        exception_handler(type(e), e, e.__traceback__)
 
 def get_hostname():
     try:
@@ -90,5 +94,6 @@ def get_hostname():
         return hostname
     except Exception as e:
         hostname = "hostname"
-        log_with_timestamp(f'Error: {e}')
+        log_console_out(f"Error: Не удалось получить имя хоста")
+        exception_handler(type(e), e, e.__traceback__)
         return hostname

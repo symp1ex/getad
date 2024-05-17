@@ -1,8 +1,8 @@
-#0.4.8.6
+#1.0
 import json
 import os, sys
 import subprocess
-from comautodetect import get_atol_port_dict, log_with_timestamp, current_time
+from comautodetect import get_atol_port_dict, exception_handler, log_console_out, current_time
 from get_remote import get_server_url, get_teamviewer_id, get_anydesk_id, get_disk_info, get_hostname
 
 def file_exists_in_root(filename):
@@ -10,7 +10,8 @@ def file_exists_in_root(filename):
         root_path = os.path.join(os.getcwd(), filename)  # Получаем путь к файлу в корне
         return os.path.isfile(root_path)  # Возвращает True, если файл существует, иначе False
     except Exception as e:
-        log_with_timestamp(f"Error: {e}")
+        log_console_out(f"Error: не удалось проверить наличие fptr10.dll в корне")
+        exception_handler(type(e), e, e.__traceback__)
 
 def read_config_json(json_file):
     try:
@@ -27,7 +28,8 @@ def create_config_file(config, file_path="config.json"):
         with open(file_path, "w", encoding="utf-8") as file:
             json.dump(config, file, ensure_ascii=False, indent=4)
     except Exception as e:
-        log_with_timestamp(f"Error: {e}")
+        log_console_out(f"Error: записать данные при создании конфиг-файла")
+        exception_handler(type(e), e, e.__traceback__)
 
 def create_new_config():
     try:
@@ -39,9 +41,10 @@ def create_new_config():
             "ip_port": "5555"
         }
         create_config_file(config_data)
-        log_with_timestamp("Создан новый config.json")
+        log_console_out("Создан новый config.json")
     except Exception as e:
-        log_with_timestamp(f"Не удалось создать конфиг файл: {e}")
+        log_console_out(f"Не удалось создать конфиг файл")
+        exception_handler(type(e), e, e.__traceback__)
 
 def create_date_file(date_json, file_name, folder_name):
     try:
@@ -50,21 +53,23 @@ def create_date_file(date_json, file_name, folder_name):
         file_path = os.path.join(folder_name, f"{file_name}.json")
         with open(file_path, "w", encoding="utf-8") as file:
             json.dump(date_json, file, ensure_ascii=False, indent=4)
-            log_with_timestamp(f"Данные сохранены в файле {file_path}")
+            log_console_out(f"Данные сохранены в файле {file_path}")
     except Exception as e:
-        log_with_timestamp(f"Error: {e}")
+        log_console_out(f"Error: не удалось создать файл с данными ФР")
+        exception_handler(type(e), e, e.__traceback__)
 
 def status_connect(fptr, port):
     try:
         isOpened = fptr.isOpened()  # спрашиваем состояние подключения
         if isOpened == 1:
-            log_with_timestamp(f"Соединение с ККТ установлено ({port})")
+            log_console_out(f"Соединение с ККТ установлено ({port})")
             return isOpened
         elif isOpened == 0:
-            log_with_timestamp(f"Соединение с ККТ разорвано ({port})")
+            log_console_out(f"Соединение с ККТ разорвано ({port})")
             return isOpened
     except Exception as e:
-        log_with_timestamp(f"Error: {e}")
+        log_console_out(f"Error: не удалось проверить статус соединения")
+        exception_handler(type(e), e, e.__traceback__)
 
 def checkstatus_getdate(fptr, IFptr, port):
     try:
@@ -75,7 +80,8 @@ def checkstatus_getdate(fptr, IFptr, port):
             del fptr
             return isOpened
     except Exception as e:
-        log_with_timestamp(f"Error: {e}")
+        log_console_out(f"Error: не удалось получить данные из-за ошибки при проверке статуса подключения")
+        exception_handler(type(e), e, e.__traceback__)
 
 def connect_kkt(fptr, IFptr):
     try:
@@ -118,7 +124,8 @@ def connect_kkt(fptr, IFptr):
             ip_with_port = f"{config.get('ip')}:{config.get('ip_port')}"
             return settings.get(IFptr.LIBFPTR_SETTING_COM_FILE, None) or ip_with_port
     except Exception as e:
-        log_with_timestamp(f"Error: {e}")
+        log_console_out(f"Error: Не удалось устанвоить соединение с ККТ")
+        exception_handler(type(e), e, e.__traceback__)
 
 def get_date_kkt(fptr, IFptr, port):
     try:
@@ -140,7 +147,8 @@ def get_date_kkt(fptr, IFptr, port):
         attribute_excise = fptr.getParamBool(1207)
         attribute_marked = fptr.getParamBool(IFptr.LIBFPTR_PARAM_TRADE_MARKED_PRODUCTS)
     except Exception as e:
-        log_with_timestamp(f"Error: {e}")
+        log_console_out(f"Error: Не удалось сделать запрос к ФР")
+        exception_handler(type(e), e, e.__traceback__)
         attribute_marked = "Не поддерживается в текущей версии драйвера"
 
     # запрос общей инфы из ФН
@@ -153,7 +161,8 @@ def get_date_kkt(fptr, IFptr, port):
         # Используйте значение fn_execution здесь
     except Exception as e:
         # Обработка случая, когда атрибут LIBFPTR_PARAM_FN_EXECUTION отсутствует
-        log_with_timestamp(f"Error: {e}")
+        log_console_out(f"Error: Не удалось сделать запрос к ФР")
+        exception_handler(type(e), e, e.__traceback__)
         fnExecution = "Не поддерживается в текущей версии драйвера"
 
     # функция запроса даты регистрации, если регистрация была первой
@@ -173,7 +182,8 @@ def get_date_kkt(fptr, IFptr, port):
                 dateTime = fptr.getParamDateTime(IFptr.LIBFPTR_PARAM_DATE_TIME)
                 return dateTime
         except Exception as e:
-            log_with_timestamp(f"Error: {e}")
+            log_console_out(f"Error: Не удалось сделать запрос к ФР")
+            exception_handler(type(e), e, e.__traceback__)
 
     datetime_reg = datetime_reg_check(fptr)
 
@@ -196,7 +206,7 @@ def get_date_kkt(fptr, IFptr, port):
 
         ffdVersion = fptr.getParamInt(IFptr.LIBFPTR_PARAM_FFD_VERSION)
 
-        log_with_timestamp(f"Данные от ККТ получены")
+        log_console_out(f"Данные от ККТ получены")
 
         fptr.close()
         status_connect(fptr, port)
@@ -231,7 +241,8 @@ def get_date_kkt(fptr, IFptr, port):
         folder_name = "date"
         create_date_file(date_json, serialNumber, folder_name)
     except Exception as e:
-        log_with_timestamp(f"Error: {e}")
+        log_console_out(f"Error: Не удалось сделать запрос к ФР")
+        exception_handler(type(e), e, e.__traceback__)
 
 def get_date_non_kkt():
     hostname, url_rms, teamviever_id, anydesk_id, total_space_gb, free_space_gb = get_remote()
@@ -261,7 +272,8 @@ def get_remote():
         total_space_gb, free_space_gb = get_disk_info(drive)
         return hostname, url_rms, teamviever_id, anydesk_id, total_space_gb, free_space_gb
     except Exception as e:
-        log_with_timestamp(f"Error: {e}")
+        log_console_out(f"Error: Не удалось получить данные с хоста")
+        exception_handler(type(e), e, e.__traceback__)
 
 def main():
     try:
@@ -272,11 +284,11 @@ def main():
             fptr = IFptr("")
         version_byte = fptr.version()
         version = version_byte.decode()
-        log_with_timestamp(f"Инициализирован драйвер версии {version}")
+        log_console_out(f"Инициализирован драйвер версии {version}")
 
         parts = version.split('.')
         if len(parts) < 3:
-            log_with_timestamp("Некорректный формат версии")
+            log_console_out("Некорректный формат версии")
             return None
 
         major, minor, patch, null = map(int, parts)
@@ -291,7 +303,8 @@ def main():
     except ImportError:
         pass
     except Exception as e:
-        log_with_timestamp(f"Error: {e}")
+        log_console_out(f"Error: не удалось инициализировать драйвер")
+        exception_handler(type(e), e, e.__traceback__)
 
     json_file = os.path.join(os.getcwd(), "config.json")
     config = read_config_json(json_file)
@@ -307,7 +320,7 @@ def main():
             if not port_number_ad:
                 get_date_non_kkt()
             elif not port_number_ad == {}:
-                log_with_timestamp(f"Найдены порты: {port_number_ad}")
+                log_console_out(f"Найдены порты: {port_number_ad}")
             baud_rate = config.get("com_baudrate")
             for port in port_number_ad.values():
                 settings = "{{\"{}\": {}, \"{}\": {}, \"{}\": \"{}\", \"{}\": {}}}".format(
@@ -321,14 +334,15 @@ def main():
 
                 checkstatus_getdate(fptr, IFptr, port)
         else:
-            log_with_timestamp("config.json имеет некорректный формат данных или отсутствует")
+            log_console_out("config.json имеет некорректный формат данных или отсутствует")
             port = connect_kkt(fptr, IFptr)  # подключаемся к ККТ
             isOpened = checkstatus_getdate(fptr, IFptr, port)
             if isOpened == 0:
                 get_date_non_kkt()
             create_new_config()
     except Exception as e:
-        log_with_timestamp(f"Error: {e}")
+        log_console_out(f"Error: не удалось подключиться к ККТ")
+        exception_handler(type(e), e, e.__traceback__)
 
     try:
         exe_path = ".\\updater\\updater.exe"
