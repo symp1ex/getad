@@ -1,4 +1,4 @@
-#1.0
+#1.0.2.1
 import json
 import os, sys
 import subprocess
@@ -71,11 +71,11 @@ def status_connect(fptr, port):
         log_console_out(f"Error: не удалось проверить статус соединения")
         exception_handler(type(e), e, e.__traceback__)
 
-def checkstatus_getdate(fptr, IFptr, port):
+def checkstatus_getdate(fptr, IFptr, port, installed_version):
     try:
         isOpened = status_connect(fptr, port)  # првоверяем статус подключения к ККТ
         if isOpened == 1:
-            get_date_kkt(fptr, IFptr, port)  # получаем и сохраняем данные
+            get_date_kkt(fptr, IFptr, port, installed_version)  # получаем и сохраняем данные
         elif isOpened == 0:
             del fptr
             return isOpened
@@ -127,7 +127,7 @@ def connect_kkt(fptr, IFptr):
         log_console_out(f"Error: Не удалось устанвоить соединение с ККТ")
         exception_handler(type(e), e, e.__traceback__)
 
-def get_date_kkt(fptr, IFptr, port):
+def get_date_kkt(fptr, IFptr, port, installed_version):
     try:
         # общая инфа об ФР
         fptr.setParam(IFptr.LIBFPTR_PARAM_DATA_TYPE, IFptr.LIBFPTR_DT_STATUS)
@@ -206,6 +206,38 @@ def get_date_kkt(fptr, IFptr, port):
 
         ffdVersion = fptr.getParamInt(IFptr.LIBFPTR_PARAM_FFD_VERSION)
 
+        # Вспомогательная функция чтения следующей записи
+
+        def get_license():
+            def readNextRecord(fptr, recordsID):
+                fptr.setParam(IFptr.LIBFPTR_PARAM_RECORDS_ID, recordsID)
+                return fptr.readNextRecord()
+
+            fptr.setParam(IFptr.LIBFPTR_PARAM_RECORDS_TYPE, IFptr.LIBFPTR_RT_LICENSES)
+            fptr.beginReadRecords()
+            recordsID = fptr.getParamString(IFptr.LIBFPTR_PARAM_RECORDS_ID)
+
+            licenses = {}
+            while readNextRecord(fptr, recordsID) == IFptr.LIBFPTR_OK:
+                id = fptr.getParamInt(IFptr.LIBFPTR_PARAM_LICENSE_NUMBER)
+                name = fptr.getParamString(IFptr.LIBFPTR_PARAM_LICENSE_NAME)
+                dateFrom = fptr.getParamDateTime(IFptr.LIBFPTR_PARAM_LICENSE_VALID_FROM)
+                dateUntil = fptr.getParamDateTime(IFptr.LIBFPTR_PARAM_LICENSE_VALID_UNTIL)
+
+                licenses[id] = {
+                    "name": name,
+                    "dateFrom": dateFrom.strftime('%Y-%m-%d %H:%M:%S'),  # Преобразование даты в строку
+                    "dateUntil": dateUntil.strftime('%Y-%m-%d %H:%M:%S')  # Преобразование даты в строку
+                }
+
+            fptr.setParam(IFptr.LIBFPTR_PARAM_RECORDS_ID, recordsID)
+            fptr.endReadRecords()
+
+            return licenses
+
+        # Пример использования функции
+        licenses = get_license()
+
         log_console_out(f"Данные от ККТ получены")
 
         fptr.close()
@@ -230,6 +262,8 @@ def get_date_kkt(fptr, IFptr, port):
             "attribute_excise": str(attribute_excise),
             "attribute_marked": str(attribute_marked),
             "fnExecution": str(fnExecution),
+            "installed_driver": str(installed_version),
+            "licenses": licenses,
             "hostname": str(hostname),
             "url_rms": str(url_rms),
             "teamviewer_id": str(teamviever_id),
@@ -279,9 +313,21 @@ def main():
     try:
         from libfptr108 import IFptr  # подтягиваем библиотеку от 10.8 и проверяем версию
         if file_exists_in_root("fptr10.dll"):
+            try:
+                fptr = IFptr("")
+                version_byte = fptr.version()
+                installed_version = version_byte.decode()
+                del fptr
+            except Exception as e:
+                log_console_out(f"Error: не удалось проверить версию установленного драйвера")
+                exception_handler(type(e), e, e.__traceback__)
+                installed_version = "Error"
             fptr = IFptr(r".\fptr10.dll")
         else:
             fptr = IFptr("")
+            version_byte = fptr.version()
+            installed_version = version_byte.decode()
+
         version_byte = fptr.version()
         version = version_byte.decode()
         log_console_out(f"Инициализирован драйвер версии {version}")
@@ -312,7 +358,7 @@ def main():
     try:
         if config is not None and not config.get("type_connect") == 0:
             port = connect_kkt(fptr, IFptr) # подключаемся к ККТ
-            isOpened = checkstatus_getdate(fptr, IFptr, port)
+            isOpened = checkstatus_getdate(fptr, IFptr, port, installed_version)
             if isOpened == 0:
                 get_date_non_kkt()
         elif config is not None and config.get("type_connect") == 0:
@@ -332,11 +378,11 @@ def main():
 
                 fptr.open()
 
-                checkstatus_getdate(fptr, IFptr, port)
+                checkstatus_getdate(fptr, IFptr, port, installed_version)
         else:
             log_console_out("config.json имеет некорректный формат данных или отсутствует")
             port = connect_kkt(fptr, IFptr)  # подключаемся к ККТ
-            isOpened = checkstatus_getdate(fptr, IFptr, port)
+            isOpened = checkstatus_getdate(fptr, IFptr, port, installed_version)
             if isOpened == 0:
                 get_date_non_kkt()
             create_new_config()
@@ -350,8 +396,9 @@ def main():
         working_directory = os.path.join(os.path.dirname(main_file),
                                          "updater")  # получаем абсолютный путь к основному файлу скрипта sys.argv[0], а затем с помощью os.path.dirname() извлекаем путь к директории, содержащей основной файл
         subprocess.Popen(exe_path, cwd=working_directory)
-    except Exception:
-        None
+    except Exception as e:
+        log_console_out(f"Error: не удалось запустить 'updater.exe'")
+        exception_handler(type(e), e, e.__traceback__)
 
 if __name__ == "__main__":
     main()

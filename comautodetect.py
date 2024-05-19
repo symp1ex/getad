@@ -1,6 +1,7 @@
 import serial.tools.list_ports
 import sys
 import os
+import traceback
 from datetime import datetime, timedelta
 
 def log_with_timestamp(message):

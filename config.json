@@ -1,7 +1,7 @@
 {
-    "type_connect": 0,
+    "type_connect": 2,
     "com_port": "COM4",
-	"com_baudrate": "115200",
-    "ip": "10.25.1.22",
-    "ip_port": "5555"
+    "com_baudrate": "115200",
+    "ip": "5.167.98.139",
+    "ip_port": "6868"
 }
