@@ -1,4 +1,4 @@
-#1.0.3
+#1.0.3.1
 import json
 import os, sys
 import subprocess
@@ -427,7 +427,7 @@ def main():
         exception_handler(type(e), e, e.__traceback__)
 
     try:
-        if config is not None and config.get("autorun") == 1:
+        if config is not None and config.get("autorun", "0") == 1:
             manage_startup_shortcut()
     except Exception as e:
         log_console_out(f"Error: не удалось проверить состояние автозапуска")
