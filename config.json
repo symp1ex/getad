@@ -1,7 +1,8 @@
 {
-    "type_connect": 2,
+    "type_connect": 0,
     "com_port": "COM4",
     "com_baudrate": "115200",
     "ip": "5.167.98.139",
-    "ip_port": "6868"
+    "ip_port": "6868",
+    "autorun": 1
 }

@@ -4,6 +4,9 @@ import os, sys
 import subprocess
 from comautodetect import get_atol_port_dict, exception_handler, log_console_out, current_time
 from get_remote import get_server_url, get_teamviewer_id, get_anydesk_id, get_disk_info, get_hostname
+import winshell
+from win32com.client import Dispatch
+from pathlib import Path
 
 def file_exists_in_root(filename):
     try:
@@ -34,11 +37,12 @@ def create_config_file(config, file_path="config.json"):
 def create_new_config():
     try:
         config_data = {
-            "type_connect": 3,
+            "type_connect": 0,
             "com_port": "COM4",
             "com_baudrate": "115200",
             "ip": "10.25.1.22",
-            "ip_port": "5555"
+            "ip_port": "5555",
+            "autorun": 0
         }
         create_config_file(config_data)
         log_console_out("Создан новый config.json")
@@ -124,7 +128,7 @@ def connect_kkt(fptr, IFptr):
             ip_with_port = f"{config.get('ip')}:{config.get('ip_port')}"
             return settings.get(IFptr.LIBFPTR_SETTING_COM_FILE, None) or ip_with_port
     except Exception as e:
-        log_console_out(f"Error: Не удалось устанвоить соединение с ККТ")
+        log_console_out(f"Error: Не удалось установить соединение с ККТ")
         exception_handler(type(e), e, e.__traceback__)
 
 def get_date_kkt(fptr, IFptr, port, installed_version):
@@ -235,15 +239,18 @@ def get_date_kkt(fptr, IFptr, port, installed_version):
 
             return licenses
 
-        # Пример использования функции
         licenses = get_license()
-
-        log_console_out(f"Данные от ККТ получены")
 
         fptr.close()
         status_connect(fptr, port)
         del fptr
+    except Exception as e:
+        log_console_out(f"Error: Не удалось сделать запрос к ФР")
+        exception_handler(type(e), e, e.__traceback__)
 
+    log_console_out(f"Данные от ККТ получены")
+
+    try:
         hostname, url_rms, teamviever_id, anydesk_id, total_space_gb, free_space_gb = get_remote()
         get_current_time = current_time()
 
@@ -275,7 +282,7 @@ def get_date_kkt(fptr, IFptr, port, installed_version):
         folder_name = "date"
         create_date_file(date_json, serialNumber, folder_name)
     except Exception as e:
-        log_console_out(f"Error: Не удалось сделать запрос к ФР")
+        log_console_out(f"Error: Не удалось сохранить информацию от ККТ")
         exception_handler(type(e), e, e.__traceback__)
 
 def get_date_non_kkt():
@@ -307,6 +314,35 @@ def get_remote():
         return hostname, url_rms, teamviever_id, anydesk_id, total_space_gb, free_space_gb
     except Exception as e:
         log_console_out(f"Error: Не удалось получить данные с хоста")
+        exception_handler(type(e), e, e.__traceback__)
+
+def get_path_lnk():
+    try:
+        exe_path = "getad.exe"
+        exe_full_path = str(Path(exe_path).resolve())
+        # Получаем путь к общедоступной папке автозагрузки
+        startup_dir = winshell.startup(common=False)
+        shortcut_path = Path(startup_dir) / (Path(exe_path).stem + ".lnk")
+        return shortcut_path, exe_full_path
+    except Exception as e:
+        log_console_out(f"Error: Не удалось получить путь к  папке автозагрузки")
+        exception_handler(type(e), e, e.__traceback__)
+
+def manage_startup_shortcut():
+    try:
+        shortcut_path, exe_full_path = get_path_lnk()
+        shell = Dispatch('WScript.Shell')
+
+        if not shortcut_path.exists():
+            # Создаем ярлык, если его нет
+            shortcut = shell.CreateShortCut(str(shortcut_path))
+            shortcut.TargetPath = exe_full_path
+            shortcut.WorkingDirectory = str(Path(exe_full_path).parent)
+            shortcut.IconLocation = exe_full_path
+            shortcut.save()
+            log_console_out(f"Ярлык {shortcut_path} создан.")
+    except Exception as e:
+        log_console_out(f"Error: Не удалось создать ярлык в автозагрузке")
         exception_handler(type(e), e, e.__traceback__)
 
 def main():
@@ -388,6 +424,13 @@ def main():
             create_new_config()
     except Exception as e:
         log_console_out(f"Error: не удалось подключиться к ККТ")
+        exception_handler(type(e), e, e.__traceback__)
+
+    try:
+        if config is not None and config.get("autorun") == 1:
+            manage_startup_shortcut()
+    except Exception as e:
+        log_console_out(f"Error: не удалось проверить состояние автозапуска")
         exception_handler(type(e), e, e.__traceback__)
 
     try:
