@@ -22,9 +22,9 @@ def read_config_json(json_file):
             config = json.load(file)
             return config
     except FileNotFoundError:
-        return None
+        create_new_config()
     except json.JSONDecodeError:
-        return None
+        create_new_config()
 
 def create_config_file(config, file_path="config.json"):
     try:
@@ -41,8 +41,7 @@ def create_new_config():
             "com_port": "COM4",
             "com_baudrate": "115200",
             "ip": "10.25.1.22",
-            "ip_port": "5555",
-            "autorun": 0
+            "ip_port": "5555"
         }
         create_config_file(config_data)
         log_console_out("Создан новый config.json")
@@ -316,35 +315,6 @@ def get_remote():
         log_console_out(f"Error: Не удалось получить данные с хоста")
         exception_handler(type(e), e, e.__traceback__)
 
-def get_path_lnk():
-    try:
-        exe_path = "getad.exe"
-        exe_full_path = str(Path(exe_path).resolve())
-        # Получаем путь к общедоступной папке автозагрузки
-        startup_dir = winshell.startup(common=False)
-        shortcut_path = Path(startup_dir) / (Path(exe_path).stem + ".lnk")
-        return shortcut_path, exe_full_path
-    except Exception as e:
-        log_console_out(f"Error: Не удалось получить путь к  папке автозагрузки")
-        exception_handler(type(e), e, e.__traceback__)
-
-def manage_startup_shortcut():
-    try:
-        shortcut_path, exe_full_path = get_path_lnk()
-        shell = Dispatch('WScript.Shell')
-
-        if not shortcut_path.exists():
-            # Создаем ярлык, если его нет
-            shortcut = shell.CreateShortCut(str(shortcut_path))
-            shortcut.TargetPath = exe_full_path
-            shortcut.WorkingDirectory = str(Path(exe_full_path).parent)
-            shortcut.IconLocation = exe_full_path
-            shortcut.save()
-            log_console_out(f"Ярлык {shortcut_path} создан.")
-    except Exception as e:
-        log_console_out(f"Error: Не удалось создать ярлык в автозагрузке")
-        exception_handler(type(e), e, e.__traceback__)
-
 def main():
     try:
         from libfptr108 import IFptr  # подтягиваем библиотеку от 10.8 и проверяем версию
@@ -421,16 +391,8 @@ def main():
             isOpened = checkstatus_getdate(fptr, IFptr, port, installed_version)
             if isOpened == 0:
                 get_date_non_kkt()
-            create_new_config()
     except Exception as e:
         log_console_out(f"Error: не удалось подключиться к ККТ")
-        exception_handler(type(e), e, e.__traceback__)
-
-    try:
-        if config is not None and config.get("autorun", "0") == 1:
-            manage_startup_shortcut()
-    except Exception as e:
-        log_console_out(f"Error: не удалось проверить состояние автозапуска")
         exception_handler(type(e), e, e.__traceback__)
 
     try:
