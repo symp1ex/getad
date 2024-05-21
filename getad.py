@@ -4,9 +4,6 @@ import os, sys
 import subprocess
 from comautodetect import get_atol_port_dict, exception_handler, log_console_out, current_time
 from get_remote import get_server_url, get_teamviewer_id, get_anydesk_id, get_disk_info, get_hostname
-import winshell
-from win32com.client import Dispatch
-from pathlib import Path
 
 def file_exists_in_root(filename):
     try:
