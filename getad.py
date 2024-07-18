@@ -1,9 +1,10 @@
-#1.0.3.1
+#1.0.3.3
 import json
 import os, sys
+import shutil
 import subprocess
 from comautodetect import get_atol_port_dict, exception_handler, log_console_out, current_time
-from get_remote import get_server_url, get_teamviewer_id, get_anydesk_id, get_disk_info, get_hostname
+from get_remote import get_server_url, get_teamviewer_id, get_anydesk_id, get_disk_info, get_hostname, get_litemanager_id
 
 def file_exists_in_root(filename):
     try:
@@ -247,7 +248,7 @@ def get_date_kkt(fptr, IFptr, port, installed_version):
     log_console_out(f"Данные от ККТ получены")
 
     try:
-        hostname, url_rms, teamviever_id, anydesk_id, total_space_gb, free_space_gb = get_remote()
+        hostname, url_rms, teamviever_id, anydesk_id, litemanager_id, total_space_gb, free_space_gb = get_remote()
         get_current_time = current_time()
 
         date_json = {
@@ -271,6 +272,7 @@ def get_date_kkt(fptr, IFptr, port, installed_version):
             "url_rms": str(url_rms),
             "teamviewer_id": str(teamviever_id),
             "anydesk_id": str(anydesk_id),
+            "litemanager_id": str(litemanager_id),
             "total_space_sys": str(f"{total_space_gb} Gb"),
             "free_space_sys": str(f"{free_space_gb} Gb"),
             "current_time": str(get_current_time)
@@ -282,7 +284,7 @@ def get_date_kkt(fptr, IFptr, port, installed_version):
         exception_handler(type(e), e, e.__traceback__)
 
 def get_date_non_kkt():
-    hostname, url_rms, teamviever_id, anydesk_id, total_space_gb, free_space_gb = get_remote()
+    hostname, url_rms, teamviever_id, anydesk_id, litemanager_id, total_space_gb, free_space_gb = get_remote()
     get_current_time = current_time()
 
     date_json = {
@@ -290,6 +292,7 @@ def get_date_non_kkt():
         "url_rms": str(url_rms),
         "teamviewer_id": str(teamviever_id),
         "anydesk_id": str(anydesk_id),
+        "litemanager_id": str(litemanager_id),
         "total_space_sys": str(f"{total_space_gb} Gb"),
         "free_space_sys": str(f"{free_space_gb} Gb"),
         "current_time": str(get_current_time)
@@ -304,12 +307,23 @@ def get_remote():
         url_rms = get_server_url()
         teamviever_id = get_teamviewer_id()
         anydesk_id = get_anydesk_id()
+        litemanager_id = get_litemanager_id()
 
         drive = 'C:\\'
         total_space_gb, free_space_gb = get_disk_info(drive)
-        return hostname, url_rms, teamviever_id, anydesk_id, total_space_gb, free_space_gb
+        return hostname, url_rms, teamviever_id, anydesk_id, litemanager_id, total_space_gb, free_space_gb
     except Exception as e:
         log_console_out(f"Error: Не удалось получить данные с хоста")
+        exception_handler(type(e), e, e.__traceback__)
+
+def rm_old_date():
+    try:
+        old_date = os.path.abspath("date")
+        if os.path.exists(old_date):
+            shutil.rmtree(old_date)
+            log_console_out(f"Старые данные успешно удалены")
+    except Exception as e:
+        log_console_out(f"Error: Не удалось удалить старые данные")
         exception_handler(type(e), e, e.__traceback__)
 
 def main():
@@ -357,6 +371,7 @@ def main():
 
     json_file = os.path.join(os.getcwd(), "config.json")
     config = read_config_json(json_file)
+    rm_old_date()
 
     try:
         if config is not None and not config.get("type_connect") == 0:

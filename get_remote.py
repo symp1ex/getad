@@ -53,6 +53,45 @@ def get_teamviewer_id():
         log_console_out(f"Произошла ошибка при чтении реестра")
         exception_handler(type(e), e, e.__traceback__)
 
+def get_litemanager_id():
+    try:
+        def search_key_recursively_64(key, subkey): #функция для рекурсивного перебора ключей во вложенных папках
+            try:
+                with winreg.OpenKey(key, subkey, 0, winreg.KEY_READ | winreg.KEY_WOW64_64KEY) as current_key:
+                    try:
+                        value, _ = winreg.QueryValueEx(current_key, "ID (read only)")
+                        return value
+                    except FileNotFoundError:
+                        pass
+
+                    i = 0
+                    while True:
+                        try:
+                            subkey_name = winreg.EnumKey(current_key, i)
+                            result = search_key_recursively_64(current_key, subkey_name)
+                            if result:
+                                return result
+                            i += 1
+                        except OSError:
+                            break
+            except FileNotFoundError:
+                return None
+
+        root_key = winreg.HKEY_LOCAL_MACHINE
+        base_subkey = "SOFTWARE\\LiteManager"
+
+        return search_key_recursively_64(root_key, base_subkey)
+
+        id_value = get_litemanager_id()
+        if id_value:
+            return id_value
+        else:
+            return None
+    except FileNotFoundError:
+        log_console_out('Реестровый ключ "ID (read only)" для LiteManager не найден.')
+    except Exception as e:
+        log_console_out(f"Error:Произошла ошибка при чтении реестра")
+        exception_handler(type(e), e, e.__traceback__)
 
 def get_anydesk_id():
     try:
