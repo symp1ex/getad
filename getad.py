@@ -1,4 +1,4 @@
-#1.0.3.3
+#1.1.0.1
 import json
 import os, sys
 import shutil
@@ -38,8 +38,13 @@ def create_new_config():
             "type_connect": 0,
             "com_port": "COM4",
             "com_baudrate": "115200",
-            "ip": "10.25.1.22",
-            "ip_port": "5555"
+            "ip": "10.127.1.22",
+            "ip_port": "5555",
+            "2-FR": 0,
+            "com_port_2-FR": "COM10",
+            "com_baudrate_2-FR": "115200",
+            "ip_2-FR": "10.127.1.100",
+            "ip_port_2-FR": "5555"
         }
         create_config_file(config_data)
         log_console_out("Создан новый config.json")
@@ -126,6 +131,43 @@ def connect_kkt(fptr, IFptr):
             return settings.get(IFptr.LIBFPTR_SETTING_COM_FILE, None) or ip_with_port
     except Exception as e:
         log_console_out(f"Error: Не удалось установить соединение с ККТ")
+        exception_handler(type(e), e, e.__traceback__)
+
+def connect_kkt_2(fptr, IFptr):
+    try:
+        json_file = os.path.join(os.getcwd(), "config.json")
+        config = read_config_json(json_file) or {}  # если нет конфигурации, используем пустой словарь
+
+        settings_map = {
+            1: {
+                IFptr.LIBFPTR_SETTING_MODEL: IFptr.LIBFPTR_MODEL_ATOL_AUTO,
+                IFptr.LIBFPTR_SETTING_PORT: IFptr.LIBFPTR_PORT_COM,
+                IFptr.LIBFPTR_SETTING_COM_FILE: config.get("com_port_2-FR"),
+                IFptr.LIBFPTR_SETTING_BAUDRATE: getattr(IFptr,
+                                                        "LIBFPTR_PORT_BR_" + str(config.get("com_baudrate_2-FR"))) if config.get(
+                    "com_baudrate_2-FR") else None
+            },
+            2: {
+                IFptr.LIBFPTR_SETTING_MODEL: IFptr.LIBFPTR_MODEL_ATOL_AUTO,
+                IFptr.LIBFPTR_SETTING_PORT: IFptr.LIBFPTR_PORT_TCPIP,
+                IFptr.LIBFPTR_SETTING_IPADDRESS: config.get("ip_2-FR"),
+                IFptr.LIBFPTR_SETTING_IPPORT: config.get("ip_port_2-FR")
+            }
+        }
+
+        settings = settings_map.get(config.get("2-FR"), {})  # Получаем настройки по типу подключения
+        if not settings:  # Если тип подключения не определен в конфигурации
+            pass
+        if settings:
+            settings_str = json.dumps(settings)
+            fptr.setSettings(settings_str)
+            fptr.applySingleSettings()
+            fptr.open()  # подключаемся к ККТ
+
+            ip_with_port = f"{config.get('ip_2-FR')}:{config.get('ip_port_2-FR')}"
+            return settings.get(IFptr.LIBFPTR_SETTING_COM_FILE, None) or ip_with_port
+    except Exception as e:
+        log_console_out(f"Error: Не удалось установить соединение со 2-ой ККТ")
         exception_handler(type(e), e, e.__traceback__)
 
 def get_date_kkt(fptr, IFptr, port, installed_version):
@@ -377,6 +419,9 @@ def main():
         if config is not None and not config.get("type_connect") == 0:
             port = connect_kkt(fptr, IFptr) # подключаемся к ККТ
             isOpened = checkstatus_getdate(fptr, IFptr, port, installed_version)
+            if config.get("2-FR") in [1, 2]:
+                port_2 = connect_kkt_2(fptr, IFptr)
+                checkstatus_getdate(fptr, IFptr, port_2, installed_version)
             if isOpened == 0:
                 get_date_non_kkt()
         elif config is not None and config.get("type_connect") == 0:
