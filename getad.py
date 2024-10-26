@@ -1,10 +1,10 @@
-#1.1.0.1
+#1.1.3.0
 import json
 import os, sys
 import shutil
 import subprocess
 from comautodetect import get_atol_port_dict, exception_handler, log_console_out, current_time
-from get_remote import get_server_url, get_teamviewer_id, get_anydesk_id, get_disk_info, get_hostname, get_litemanager_id
+from get_remote import get_server_url, get_teamviewer_id, get_anydesk_id, get_hostname, get_litemanager_id
 
 def file_exists_in_root(filename):
     try:
@@ -237,11 +237,21 @@ def get_date_kkt(fptr, IFptr, port, installed_version):
 
         dateTime_end = fptr.getParamDateTime(IFptr.LIBFPTR_PARAM_DATE_TIME)
 
-        # версия загрузчика
+        # # версия загрузчика
+        # fptr.setParam(IFptr.LIBFPTR_PARAM_DATA_TYPE, IFptr.LIBFPTR_DT_UNIT_VERSION)
+        # fptr.setParam(IFptr.LIBFPTR_PARAM_UNIT_TYPE, IFptr.LIBFPTR_UT_BOOT)
+        # fptr.queryData()
+        # bootVersion = fptr.getParamString(IFptr.LIBFPTR_PARAM_UNIT_VERSION)
+
+
+        # запрос версии конфигурации
         fptr.setParam(IFptr.LIBFPTR_PARAM_DATA_TYPE, IFptr.LIBFPTR_DT_UNIT_VERSION)
-        fptr.setParam(IFptr.LIBFPTR_PARAM_UNIT_TYPE, IFptr.LIBFPTR_UT_BOOT)
+        fptr.setParam(IFptr.LIBFPTR_PARAM_UNIT_TYPE, IFptr.LIBFPTR_UT_CONFIGURATION)
         fptr.queryData()
+
         bootVersion = fptr.getParamString(IFptr.LIBFPTR_PARAM_UNIT_VERSION)
+        #releaseVersion = fptr.getParamString(IFptr.LIBFPTR_PARAM_UNIT_RELEASE_VERSION)
+
 
         # запрос версии ФФД
         fptr.setParam(IFptr.LIBFPTR_PARAM_FN_DATA_TYPE, IFptr.LIBFPTR_FNDT_FFD_VERSIONS)
@@ -290,7 +300,7 @@ def get_date_kkt(fptr, IFptr, port, installed_version):
     log_console_out(f"Данные от ККТ получены")
 
     try:
-        hostname, url_rms, teamviever_id, anydesk_id, litemanager_id, total_space_gb, free_space_gb = get_remote()
+        hostname, url_rms, teamviever_id, anydesk_id, litemanager_id = get_remote()
         get_current_time = current_time()
 
         date_json = {
@@ -315,8 +325,6 @@ def get_date_kkt(fptr, IFptr, port, installed_version):
             "teamviewer_id": str(teamviever_id),
             "anydesk_id": str(anydesk_id),
             "litemanager_id": str(litemanager_id),
-            "total_space_sys": str(f"{total_space_gb} Gb"),
-            "free_space_sys": str(f"{free_space_gb} Gb"),
             "current_time": str(get_current_time)
         }
         folder_name = "date"
@@ -326,7 +334,7 @@ def get_date_kkt(fptr, IFptr, port, installed_version):
         exception_handler(type(e), e, e.__traceback__)
 
 def get_date_non_kkt():
-    hostname, url_rms, teamviever_id, anydesk_id, litemanager_id, total_space_gb, free_space_gb = get_remote()
+    hostname, url_rms, teamviever_id, anydesk_id, litemanager_id = get_remote()
     get_current_time = current_time()
 
     date_json = {
@@ -335,8 +343,6 @@ def get_date_non_kkt():
         "teamviewer_id": str(teamviever_id),
         "anydesk_id": str(anydesk_id),
         "litemanager_id": str(litemanager_id),
-        "total_space_sys": str(f"{total_space_gb} Gb"),
-        "free_space_sys": str(f"{free_space_gb} Gb"),
         "current_time": str(get_current_time)
     }
     folder_name = "date"
@@ -351,9 +357,9 @@ def get_remote():
         anydesk_id = get_anydesk_id()
         litemanager_id = get_litemanager_id()
 
-        drive = 'C:\\'
-        total_space_gb, free_space_gb = get_disk_info(drive)
-        return hostname, url_rms, teamviever_id, anydesk_id, litemanager_id, total_space_gb, free_space_gb
+        #drive = 'C:\\'
+        #total_space_gb, free_space_gb = get_disk_info(drive)
+        return hostname, url_rms, teamviever_id, anydesk_id, litemanager_id
     except Exception as e:
         log_console_out(f"Error: Не удалось получить данные с хоста")
         exception_handler(type(e), e, e.__traceback__)

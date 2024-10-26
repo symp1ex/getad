@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as ET
 import os
 import winreg
-import ctypes
+#import ctypes
 import socket
 from comautodetect import exception_handler, log_console_out
 
@@ -21,7 +21,8 @@ def get_server_url():
         return server_url_element.text
     except FileNotFoundError:
         log_console_out("Error: файл 'cashserver/config.xml' не найден.")
-    except Exception:
+    except Exception as e:
+        log_console_out(f"Error:Произошла ошибка при чтении файла 'cashserver/config.xml'")
         exception_handler(type(e), e, e.__traceback__)
 
 
@@ -110,22 +111,22 @@ def get_anydesk_id():
         exception_handler(type(e), e, e.__traceback__)
 
 
-def get_disk_info(drive):
-    try:
-        free_bytes = ctypes.c_ulonglong(0)
-        total_bytes = ctypes.c_ulonglong(0)
-        ctypes.windll.kernel32.GetDiskFreeSpaceExW(ctypes.c_wchar_p(drive), None, ctypes.pointer(total_bytes), ctypes.pointer(free_bytes))
-        total_space_gb = total_bytes.value / (1024 ** 3)  # Общий объем в гигабайтах
-        free_space_gb = free_bytes.value / (1024 ** 3)    # Свободное место в гигабайтах
-
-        # Ограничиваем количество знаков после запятой до 3
-        total_space_gb = "{:.2f}".format(total_space_gb)
-        free_space_gb = "{:.2f}".format(free_space_gb)
-
-        return total_space_gb, free_space_gb
-    except Exception as e:
-        log_console_out(f"Error: Не удалось получить информацию о диске")
-        exception_handler(type(e), e, e.__traceback__)
+# def get_disk_info(drive):
+#     try:
+#         free_bytes = ctypes.c_ulonglong(0)
+#         total_bytes = ctypes.c_ulonglong(0)
+#         ctypes.windll.kernel32.GetDiskFreeSpaceExW(ctypes.c_wchar_p(drive), None, ctypes.pointer(total_bytes), ctypes.pointer(free_bytes))
+#         total_space_gb = total_bytes.value / (1024 ** 3)  # Общий объем в гигабайтах
+#         free_space_gb = free_bytes.value / (1024 ** 3)    # Свободное место в гигабайтах
+#
+#         # Ограничиваем количество знаков после запятой до 3
+#         total_space_gb = "{:.2f}".format(total_space_gb)
+#         free_space_gb = "{:.2f}".format(free_space_gb)
+#
+#         return total_space_gb, free_space_gb
+#     except Exception as e:
+#         log_console_out(f"Error: Не удалось получить информацию о диске")
+#         exception_handler(type(e), e, e.__traceback__)
 
 def get_hostname():
     try:
